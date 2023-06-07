@@ -6,7 +6,7 @@ I'm currently following the course made by Adrian Cantrill, so the folders would
 
 To support him, please purchase the course from  [his website](https://learn.cantrill.io/p/aws-certified-solutions-architect-associate-saa-c03).
 
-## Disclaimer ##
+## Disclaimer 
 
 - All the contents of this repo are solely based on how I personally understood the different topics in Adrian's course. Everything will also be sourced from the said course so there will be no original content coming from my end.
 
@@ -14,4 +14,4 @@ To support him, please purchase the course from  [his website](https://learn.can
 
 <br>
 
-## Happy Learning! :tada: 
+### Happy Learning! :tada: 
