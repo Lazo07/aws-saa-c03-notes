@@ -76,9 +76,9 @@ Access EC2 local ssh:<br>
     - Public = everyone allowed
     - owner = implicitly allowed because they own it
     - explicit - specific accounts allowed, granted by owner
-- AMI Contais Root Volume
-    - Root Volume (kinda like boot drive like C:/)
-    - It has at least 1 volume (root) but can be more (data)
+- AMI Contais Volumes
+    - Root Volume = kinda like boot drives like C:/ in Windows
+    - It has at least 1 volume (root volume) but there can be more (data volumes)
 - AMI has Block Device Mapping
     - Connects volumes and how they are presented to OS (which is root? data?)
     - mapping volume -> device ID which OS understands
@@ -119,6 +119,7 @@ Access EC2 local ssh:<br>
         example: =============
         arn:aws:s3:::koalacampaign20231234567
 
+<br>
 
 ## CloudFormation Introduction
 
@@ -140,4 +141,78 @@ Access EC2 local ssh:<br>
 - Conditions : Allows decision making in the template
 - Output : shows output once the template is finished. 
 
+<br>
 
+## CloudWatch Introduction
+
+- collects and manages operational data
+
+- 3 main jobs
+    - Metrics (CPU, disk usage, visitors/sec etc.)
+        - Gathers data natively
+        - non-native data (outside AWS) needs CloudWatch agent
+        - monitoring things inside products which arent exposed to AWS needs CloudWatch agent as well (ie. which processes are running inside EC2 instance)
+    - CloudWatch Logs
+    - CloudWatch Events
+        - Generates an event in response to something 
+
+### Namespace 
+- container for monitoring data
+- has rule set for names
+- all AWS data goes to AWS namespace: AWS/[service] 
+
+### Metric 
+- time ordered set of datapoints
+
+### Datapoint
+- consist of timestamp and value
+
+### Dimension
+- instance ID + instance type
+- used to filter datapoints for a particular instance only
+
+### Alarms
+- Connected to a metric.
+- based on configuration, it will take an action based on that metric
+- Has the following states:
+    - OK - do nothing
+    - ALARM - do something (SNS or action)
+    - INSUFFICIENT_DATA - the alarm is ongoing gathering data before it determines OK or ALARM state
+
+Inside EC2, you can do stress test using this command:
+
+        sudo yum install stress -y
+
+        // -c 1 = t2.micro has 1 virtual cpu
+        // -t 3600 = run the stress for 3600 seconds
+        stress -c 1 -t 3600 
+        
+## Shared Responsibility Model
+
+- AWS is responsible for the security "of" the cloud.
+- Customer is responsible for security "in" the cloud.
+
+![Alt text](pic/SharedResponsibilityModel-2.png)
+
+<br>
+
+## High-Availability vs Fault-Tolerance vs Disaster Recovery
+
+- Abbreviated as HA, FT and DR.
+
+### High Availability (HA)
+- Minimise any outages
+- ensure agreed level of operation performance.
+- maximizes a systems online time.
+- Doesn't care about user experience. There might be some hassle for the user but it's tolerable as long as there's availability.
+
+
+### Fault Tolerance (FT)
+- Operate through faults
+- much more complex and expensive vs HA
+- enables system to continue operating properly in the event of the failure of some components
+- Not having FT means potentially putting life at risk. That's the key difference with HA. For example, you would rather have a plane with Fault Tolerance rather than High Availability.
+
+### Disaster Recovery (DR)
+- Used when HA and FT did not work
+- a set of policies/tools/procedures to enable recovery following a natural or human-induced disasters.
