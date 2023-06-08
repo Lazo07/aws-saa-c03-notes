@@ -2,6 +2,7 @@
 
 ## PUBLIC INTERNET Zone (ie. gmail, e-commerce) 
 
+- "PUBLIC" Zone (public internet)
 - "AWS PUBLIC" Zone (ie. s3. Network connected to Public Internet.)
 - AWS PRIVATE Zone (ie. EC2. Behind an API gateway. Needs to pass through AWS Public)
 - Region - all services are available
@@ -26,7 +27,8 @@ AZ Resilient (prone to hardware failure. Other AZ inside the same region will no
     - initially created by AWS
     - a lot of preconfiguration already done by AWS, means its inflexible
     - always configured with 1 CIDR only and it's always 172.31.0.0/16
-    - 1 /20 Subnet -> 1 AZ
+    - 1 /20 Subnet -> 1 AZ. 
+    - Number of subnets for a default VPC is equal to the number of AZs in the region the VPC was located in.
     - by default already has Internet gateway(IGW), Security Group(SG), NACL, Subnets, assigned public IPv4 addresses
 - Custom
     - can have multiple per region
@@ -73,12 +75,12 @@ Access EC2 local ssh:<br>
 - AMI -> EC2 -> AMI
 
 - AMI Contains Permissions
-    - Public = everyone allowed
-    - owner = implicitly allowed because they own it
-    - explicit - specific accounts allowed, granted by owner
+    - Public access = everyone allowed
+    - Owner only = implicitly allowed because they own it
+    - Specific AWS account (explicit) = specific accounts allowed, granted by owner
 - AMI Contais Volumes
-    - Root Volume = kinda like boot drives like C:/ in Windows
-    - It has at least 1 volume (root volume) but there can be more (data volumes)
+    - Boot Volume = kinda like boot drives like C:/ in Windows
+    - It has at least 1 volume (boot volume) but there can be more (data volumes)
 - AMI has Block Device Mapping
     - Connects volumes and how they are presented to OS (which is root? data?)
     - mapping volume -> device ID which OS understands
@@ -216,3 +218,112 @@ Inside EC2, you can do stress test using this command:
 ### Disaster Recovery (DR)
 - Used when HA and FT did not work
 - a set of policies/tools/procedures to enable recovery following a natural or human-induced disasters.
+
+<br> 
+
+## Route53 Introduction
+- service that allows you to register domains
+- it can host zone files in managed nameservers
+- A global service with single database
+    - Globally Resilient - can tolerate failure of one or more regions
+
+### Top Level Registries
+- IANA: 
+    - .com, .io, .net
+    - Manages the DNS Root Zone
+- PIR: .org
+- Registry: Maintains the zones for a TLD (ie. .org)
+- Registrar : Type of organization that has relationships with the .org TLD zone manager allowing domain registration.
+
+### Organizations that manage the DNS Root Server
+- etc... there are 12 in total
+
+### Domain Registration Process using Route53
+1. Check if domain is available.
+    - There are 13 DNS root servers.
+2. Route53 creates zone file for the domain being registered
+    - zone file/hosted zone = database with all DNS info about the domain
+3. Allocates name servers for the zone 
+    - name servers = servers that Route53 creates and manages which are distributed globally
+    - normally there's 4 name servers per 1 individual zone
+4. Put zone file onto the 4 managed name servers
+5. Liase with name registries (for the top level domain) to add the name  server records into the zone file (top level domain zone).
+    - name server records = This is how the registry delegate the admin of the domain tools
+6. By adding the name server records to the org zone, they indicate that the 4 name servers are all authoritative for the domain.
+
+### Hosted Zones
+- Route53 provides DNS zones and hosting for those zones.
+- Route53 is a DNS as a service
+    - it lets you create and manage zone files (called "hosted zones" in Route53 terminology because they're hosted on AWS managed name servers)
+- When a hosted zone is created, a number of servers are allocated and linked to that hosted zone. So that means 1 hosted zone = 1 name server.
+- Can be public
+    - Data is accessible on the public internet.
+    - The name servers for a public hosted zone live in AWS public zone. It means it's accessible anywhere with the public internet connection.
+    - Part of public DNS system.
+- Can be private
+    - It means it's linked to one or more VPCs and only accessible from within those VPCs.
+    - Used to host sensitive DNS records.
+- A hosted zone hosts DNS records.
+    - records are called "record sets" in Route53.
+
+<br>
+
+## DNS Record Types
+
+### Nameserver records (NS records)
+- Record types which allow delegation to occur in DNS. 
+- name server records are how delegation works end-to-end in DNS.
+
+![Alt text](pic/DNS-RecordTypes-2.png)
+
+### A and AAAA Records
+- Converts a HOST to IP
+    - A www -> 172.217.25.36 (v4)
+    - AAAA www -> 2404:6800:4006:802::2004 (v6)
+
+![Alt text](pic/DNS-RecordTypes-3.png)
+
+### CNAME Records
+- Stands for "Canonical Name"
+- Lets you create a DNS shortcut (Host to host records)
+- all CNAMES will resolve to the same IPv4 address
+- used toremove admin overhead
+- CNAMES cannot point directly at an IP address, only other names.
+
+![Alt text](pic/DNS-RecordTypes-4.png)
+
+### MX Records
+- used for emails
+- It is how the server can find the mail server for a specific domain.
+
+
+![Alt text](pic/DNS-RecordTypes-5.png)
+
+### TXT Records
+- Also known as "text record".
+- Allows you to add abitrary text to a domain
+- A way for DNS to provide additional functionality.
+- Common usage: 
+    - fight spam
+        - indicate which entities are authorized to send email for example.
+    - proving domain ownership.
+        - Query TXT to make sure that it matches the value that the external party is expecting.
+
+![Alt text](pic/DNS-RecordTypes-6.png)
+
+### DNS TTL (Time To Leave) concept
+- can be set in DNS records.
+- numeric value in seconds.
+- Authoritative server = source of truth. reached by traversing from root (it will take time)
+    - Gives authoritative answer = answer from source of truth.
+- Non-authoritative server = Can be the resolver server (by our internet provider)
+    - Cached value from Authoritative server
+    - faster to retrieved vs authoritative answer because there's no need to do traversal
+    - The non-authoritative answer (cache) information will stay in the Resolver server within the time set as TTL. If TTL 3600 is set, the record will stay for 1 hour (TTL 3600 = 1 hour).
+- TTL values need to be balanced.
+    - Too low value will mean more queries against your nameservers.
+    - Too high value means less queries, but less control. (Example: There migh be delays in email sending if there's a record change but MX TTL is set too high)
+- Resolvers should obey TTL values. But it can be configured to ignore them by the admin of the resolver server.
+- It's adviced to lower the TTL value well in advance of the work (days or weeks) to make sure that you have less caching issues.
+
+![Alt text](pic/DNS-RecordTypes-7.png)
