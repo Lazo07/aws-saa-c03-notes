@@ -217,3 +217,57 @@ Sample of a policy that allows you to create a service-linked role:
 - A method inside AWS which gives you the ability to implement role separation.
 - Can also be used with service-linked roles.
 - more info: https://blog.rowanudell.com/iam-passrole-explained/
+
+## AWS Organizations
+
+- Used to manage multiple AWS accounts.
+- single AWS account = <u>standard AWS account</u>
+    - account that is not within an organization.
+- <u>Management Account</u> = the standard account that created the organization.
+    - old name : Master Account
+    - other name Payer Account
+    - can invite other standard accounts to become part of an AWS organization.
+    - once invite is accepted by standard accounts, they become <u>member accounts</u>.
+    - aside from inviting existing accounts, you can also create an account directly within the organization (there will be no invitation process).
+- can have 1 and only 1 management account.
+- can have 0 or more member accounts.
+- <u>Organization root</u>
+    - a container within an AWS organization, which can contain AWS accounts (member or management accounts).
+    - can contain other containers known as <u>organizational units</u> or OUs.
+        - can contain AWS accounts as well.
+        - can container other organizational units.
+- Individual billings per member account will become <u>Consolidated billing</u>
+    - member account will pass the billing through management account.
+    - Payer account is the account that contains the payment method for the organization (the management account).
+- Can do consolidation of reservations and volume discounts.
+- Features a service called <u>Service Control Policies (SCPs)</u>
+    - Lets you restrict what AWS accounts within the organization can do.
+- Role switch = Accessing from on-premise, or a management account to an AWS account via IAM role. Then from there it will provide access to different other accounts in the same organization. In the back-end, it lets you assume a role in those other accounts so you can access them.
+
+## Service Control Policies (SCPs)
+- Lets you restrict AWS accounts within the organization.
+- They can limit what the account (the account root user itself and its identities) can do.
+    - You can't restrict the account root users directly, but you can restrict the allowed usages of the account itself.
+    - ex: Limit possible regions, Limit possible EC2 instance sizes.
+- a policy file (JSON) that can be attached to organization root or to OUs. Can also be attached to individual AWS accounts.
+- Inherited in the organization tree.
+- the management account is NEVER affected by SCPs.
+- Don't grant permissions. They are just boundaries. permissions are still handled by identities.
+
+### You can use SCPs in two ways:
+1. Deny list
+    - Allow by default, then block certain cervices.
+    - This is the default. When you enable SCPs in organization, AWS apply a default policy (FullAWSAccess) having no restriction.
+    - priority rule is the same: deny, allow, deny.
+    - has much lower admin overhead.
+2. Allow list
+    - Block by default, then allow certain services.
+    - 1st step is to remove FullAWSAccess policy, meaning everything will have implicit deniesat the start. Then add services you want to allow into a new policy.
+    - has more overhead.
+
+### Combining Identity policy and SCP
+
+- Only the three green policies will take effect. 
+- The policy needs to be allowed in both identity policies and SCP.
+
+![Alt text](pic/ServiceControlPolicies-2.png)
