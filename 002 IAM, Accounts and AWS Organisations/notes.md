@@ -59,8 +59,8 @@
         - Reusable
         - Low management overhead
     - 2 types of managed policies:
-        - AWS managed policies = created and managed by AWS.
-        - Customer managed policies = you can create and manage so you can define them as per the exact requirement of your business.
+        - <u>AWS managed policies</u> = created and managed by AWS.
+        - <u>Customer managed policies</u> = you can create and manage so you can define them as per the exact requirement of your business.
 
 <br>
 
@@ -271,3 +271,123 @@ Sample of a policy that allows you to create a service-linked role:
 - The policy needs to be allowed in both identity policies and SCP.
 
 ![Alt text](pic/ServiceControlPolicies-2.png)
+
+## CloudWatch Logs
+- A public pervice. hosted in AWS public zone.
+- Regional service.
+- Store, monitor, access logging data.
+- has built in integration with many AWS services.
+- How to log data to cloudWatch log:
+    - AWS services which can log into CloudWatch directly.
+    - Via unified cloudWatch agent.
+    - use development kits in AWS and implement logging to cloudwatch logs directly.
+- Can generate metric based on logs (metric filter).
+- Log events: events coming from logging sources
+- Log stream: group of events from the same source or instance.
+- Log groups: container of Log streams for the same type of logging.
+    - stores configuration settings and metric filters.
+    - these settings/filters will apply to log streams inside the log group.
+
+![Alt text](pic/CloudWatchLogs-1.png)
+
+<br>
+
+## CloudTrail
+- A product which logs API actions which affect AWS accounts.
+- Logs API calls/activities (called <u>CloudTrail event</u>)
+    - a record of activity in AWS account.
+    - can be taken by the users/role/services.
+- CloudTrail is NOT Realtime.
+    - delivers logs within 15 minutes of the account activity occuring.
+
+### Types of CloudTrail events
+- management events
+    - Management operations performed on resources (also known as control plane operations).
+        - ex. creating/terminating EC2 instances, creating VPC, logging in an IAM.
+    - By default, CloudTrail only logs management events because data events are often much higher in volume.
+- data events
+    - resource operation performed on or in a resource.
+        - ex. objects accessed and uploaded to S3, Lambda is invoked.
+- insights events
+    - [to be discussed]
+    - Identify unusal activity, errors or user behaviors.
+
+### CloudTrail Trail
+- Unit of configuration within the cloudTrail product.
+- It 's how you tell cloudTrail on how to operate.
+- A trail logs events for the AWS region that it's created in.
+- Regional Service.
+- When a trail is created, it can be configured to operate in 2 ways.
+    - Create a trail which is a <u>one-region trail</u>.
+        - Only ever in the region that it was created in.
+    - Create a trail which is for <u>all regions</u>.
+        - Collection of trails in every AWS region but it's managed as one logical trail.
+        - When AWS adds a new region, an all-region trail is automatically updated.
+- Global Services always log to <u>us-east-1</u> region (ex. IAM, STS, CloudFront).
+    - classified as <u>Global Service Events</u> - would need to be enabled on a trail. Otherwise, trail will just log events in the region it was created in.
+- Regional Services log to their own specific regions.
+
+### Defaults
+- By default, it stores the last 90 days of CloudTrail events in an Event History (for free).
+    - If you want to customize (add days to the default 90), you need to create 1 or more <u>Trails</u>.
+        - You can set the trail to store the logs in json format to an S3 bucket indefinitely.
+        - You can set the trail to store the logs inside CloudWatch logs.
+- By default, CloudTrail <u>only logs management events</u> because data events are often much higher in volume.
+- By default, <u>Global Service events are disabled</u>.
+
+### Organizational Trail
+- If you create the trail from the management account of an organization, it can store all info from all the account inside that organization.
+
+<br>
+
+## AWS Control Tower
+- Quick and easy setup of multi-account environment.
+- Orchestrates other AWS services to provide different functionalities
+    - under this is AWS Organizations.
+    - It also uses IAM Identity Center (formerly known as AWS SSO), CloudFormation, Config etc.
+- think of it as an evolution of AWS Organizations adding significantly more features, intelligence and automation.
+- A product that brings features of lots of different AWS products together and orchestrates them.
+
+### Parts of Control Tower
+- Landing Zone
+    - well architected multi-account environment
+        - has a concept of home region.
+            - You can  explicitly allow or deny the usage of other AWS regions, but the home region (the one that you deploy into) is always available.
+    - built with different functionalities mentioned above.
+    - Has a concept of foundational OU, by default called the <u>Security OU</u>.
+        - Under it are Log Archive and Audit AWS accounts used for security and auditing purposes.
+    - <u>Sandbox OU</u>
+        - For testing and less rigid security situations.
+    - You can create more OUs with different structures.
+    - Uses IAM Identity Center (AWS SSO)
+        - provide SSO across multiple-accounts within the Landing Zone.
+        - capable of <u>ID Federation</u>
+            - You can use your existing identity stores to access all of these different AWS accounts.
+    - Landing Zone provides monitoring and notifications using CloudWatch and SNS.
+    - You can allow end users to provision new AWS accounts within the Landing Zone using <u>Service Catalog</u>.
+- Guard Rails
+    - Detect or mandate rules and standards across all AWS accounts within the landing zone.
+    - Rules for multi-account governance
+    - <u>Types of guard rails</u>:
+        - Mandatory : Always applied 
+        - Strongly recommended : Strongly recommended by AWS
+        - Elective : can be used to implement fairly niche requirements (optional)
+    - <u>Function of guard rails</u>:
+        - preventative : Stop you doing things (AWS Org, SCP)
+        - detective : compliance check. Uses AWS config to check that the configuration of a given thing within an AWS account matches what you define as best practice. 
+            - clear, in violation or not enabled.
+    
+- Account Factory
+    - Automates and standardises new account creation.
+    - Feature that allows automated account provisioning.
+        - done by either admin or end users with appropriate permissions.
+    - Automated provisioning includes the application of guard rails.
+    - end users can be given admin access to provision accounts for any purpose which you define as ok.
+    - Applies standard account and network configuration.
+    - Allows account to be closed or repurposed.
+    - Can be fully integrated with a business SDLC using APIs (not just via UI).
+- Dashboard
+    - single-page oversight of the entire organization.
+
+
+![Alt text](pic/AWSControlTower.png)
