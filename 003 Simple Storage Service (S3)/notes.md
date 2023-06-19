@@ -193,3 +193,120 @@
     - via Key policies (a resource policy)
     - via combining Key Policies + IAM Policies (not ideal to split into two, it's better to focus on using Key policy only)
     - via Key Policies + grants (to be discussed if needed)
+
+## S3 Server-side Encryption (SSE)
+- Buckets are not encrypted, objects are.
+- 2 main encryption architectures
+    1. Client-side encryption
+        - objects being uploaded are encrypted by the client before they leave.
+        - The data is ciphertexted the entire time.
+        - data is received in a scrambled form and then stored in a scrambled form.
+        - you handle everything (keys, process, tooling)
+    2. Server-side encryption (SSE)
+        - Even though the data is encrypted in transit using HTTPS, the objects themselves aren't initially encrypted.
+        - Inside the tunnel, the data is in its original form.
+        - When reaching S3 endpoint, the objbect will be encrypted and then sent to S3 storage.
+        - you allow S3 to handle some processes.
+        - mandatory by AWS. You can no longer store unencrypted objects via S3.
+- 2 types of encryption
+    1. at rest
+        - how data is stored on disk in an encrypted way.
+        - This will be the focus in current lesson.
+    2. in transit
+        - used when transferring from user side to S3 (vise versa).
+        - uses an encrypted tunnel
+            - you can't see raw data inside the tunnel.
+            - uses this as default but there are exceptions (will be discussed elsewhere in the course)
+
+### 3 types of server-side encryption (SSE) for S3 objects
+1. SSE-C
+    - server-side encryption with customer provided keys.
+2. SSE-S3
+    - server-side encryption with Amazon S3 managed keys.
+    - this is default.
+3. SSE-KMS
+    - enhancements on SSE-S3
+    - server-side encryption with KMS keys stored inside AWS Key Management Service (KMS).
+
+### 2 components of server-side encryption
+- encryption process and decryption process
+    - symmetrical so you use the same key for both encryption and decryption.
+- generation and management of the cryptographic keys
+    - used as part of the encryption and decryption processes.
+
+### How does the 3 types of SSE handle the 2 components?
+- SSE-C
+    - customer is responsible for the key generation and management.
+    - S3 manages the encryption and decryption processes.
+        - essentially offloading the CPU requirement of cryptography to AWS.
+- SSE-S3 (AES256)
+    - AWS is responsible for the key generation and management.
+    - AWS handles the encryption and decryption processes
+    - Uses S3 key for encrypting the object key, which is used to encrypt the object
+        - 100% managed by AWS, you can't control this key.
+    - uses AES-256 algorithm.
+    - not suitable for you if you need the following:
+        - control for access of key, rotation of key, role separation (S3 admin is not limited).
+- SSE-KMS
+    - AWS (S3 + KMS) is responsible for the key generation and management.
+    - AWS (S3) handles the encryption and decryption processes
+    - Involving KMS.
+    - Uses KMS Key isntead of S3 key.
+    - Customer can create managed KMS keys.
+    - advantage:
+        - control for access of key
+        - rotation of key
+        - role separation.
+
+<br>
+
+## S3 Bucket Keys
+- There's a limit on how many PUTs per second you can do with S3 + KMS.
+- Use KMS key to generate a time limited bucket key for encryption/decryption inside S3.
+    - offloads the work from KMS to S3.
+    - reduces the costs and improves scalability because it significantly reduces KMS API calls.
+- Not retroactive
+    - only affects objects or object encryption process after it's enabled on a bucket.
+
+### Things to keep in mind when using S3 bucket keys
+- after enabling the key, whne using cloudtrail to view KMS logs, then those logs will show the bucket ARN instead of your object ARN.
+- Since offloading the work from KMS to S3, you're going to see fewer CloudTrail events for KMS.
+- Bucket key works with same region replication and cross region replication.
+    - When S3 replicates an encrypted object, it preserves the encryption settings of that encrypted object.
+    - if replicating plaintext to a bucket that uses encryption, then S3 encrypts that object on it's way through to the destination with the destination's encryption configuration (will have ETAG changes).
+
+<br>
+
+## S3 Object Storage Classes
+1. S3 standard
+    - default storage class.
+    - Should be used for frequently accessed data, which is important and non-replaceable.
+    - Should always be the default choice. Only consider moving to other storage classes when there is a specific reason to do so.
+    - when user calls API to upload, objects are replicated acress 3 different AZs in the AWS region.
+    - S3 API endpoint responds with HTTP/1.1 200 OK = your data has been stored durably within the product.
+    - durability:
+        - 99.999999999% durability
+        - for 10,000,000 objects, 1 object loss per 10,000 years.
+        - Used to detect and fix any data corruption
+            - Replication over 3 AZ's
+            - Content-MD5 Checksums
+            - Cyclic Redundancy checks (CRCs)
+    - most balanced.
+2. S3 Standard-IA (Standard Infrequent access)
+    - process, replication, durability the same as with S3 Standard.
+    - Cheaper than S3 standard.
+    - In exchange of the cheaper price, there are compromises:
+        - Has new cost component: Retrieval fee
+            - Has a per gigabyte of data retrieval fee on top of transfer fee.
+            - overall cost increases with frequent data access.
+        - Has minimum duration charge of 30 days.
+        - has minimum capacity charge of 128KB per object.
+    - This class is designed for infrequently accessed data, long-lived data which are important but where access is infrequent.
+    - Don't use for lots of small files, temporary data, data that are constantly accessed, unimportant data or data that can easily be replaced.
+3. S3 One Zone-IA (One Zone Infrequent Access)
+    - Cheaper than S3 Standard-IA and S3 Standard with compromise.
+    - has the same charges and durability as with S3 Standard-IA.
+    - The diffence is it does not provide multi-AZ resilience model. It only uses one AZ within the region.
+    - This class is used for long-lived data as well with infrequent access.
+    - Use this class for non-critical data or data which can easily be replaced.
+        - replica copies, intermediate data.
