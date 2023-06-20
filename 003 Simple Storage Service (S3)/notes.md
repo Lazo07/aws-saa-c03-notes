@@ -310,3 +310,92 @@
     - This class is used for long-lived data as well with infrequent access.
     - Use this class for non-critical data or data which can easily be replaced.
         - replica copies, intermediate data.
+4. S3 Glacier - Instant 
+    - Like S3 Standard-IA but with 
+        - cheaper storage
+        - more expensive retrieval cost
+        - longer minimums
+    - For Standard-IA, it is usually meant for data that gets accessed say once a month. However for Glacier - Instant, it is for data that gets accessed say once every quarter.
+    - minimum storage duration charge of 90 days.
+    - As the access frequency of objects decrease, you can move from standard -> standard-IA -> Glacier Instant retrieval.
+    - Cost more the more frequent you access data, but costs less otherwise.
+5. S3 Glacier - Flexible
+    - Originally called "S3 Glacier" when S3 Glacier - Instant has not been created/offered yet.
+    - Used when you need to store archival data where frequent or real-time access isn't needed (example: yearly access) and you're ok with minutes to hours retrieval time.
+    - One of the cheapest form of S3 storage, but not THE cheapest. The cheapest is S3 Glacier Deep Archive.
+    - Has 3-availability zone architecture as S3 standard and S3 standard-IA.
+    - Has same durability characteristics.
+    - Retrieval cost = 1/6 of S3 Standard.
+    - data is in a "chilled" state.
+    - Cold objects
+        - they're not immediately available.
+        - can't be made public.
+        - You can't view the actual object but instead you're given a pointer to access them, and you'll use it to do the retrieval process. The retrieval process is paid (not free).
+        - When you store objects in Glacier - Flexible, the object is temporarily stored in the S3 Standard-IA. You access them and then gets removed.
+        - You can retrieve them permanently by changing the class back to one of the S3 ones but this is a different process.
+    - 3 types of retrieval (faster = more expensive):
+        - Expedited: data available in 1-5 min
+        - Standard: 3-5 hrs
+        - Bulk: 5-12 hrs
+    - first byte latency = minutes or hours
+        - while it's cheap, you have to be able to tolerate that you can't make the object public anymore(either in the bucket or using a static website hosting), and
+        - when you do access the objects, it's not an immediate process.
+    - 40KB minimum billable size
+    - 90 day minimum billable duration
+6. S3 Glacier Deep Archive
+    - should be used for data which is rarely (if ever) needed to be accessed and where hours or days are tolerable for the retrieval procees.
+    - not suited for primary system backups because of the restore time.
+    - More suited for secondary long-term archival backups or data which comes under legal regulatory requirement in terms of retention length.
+    - Cheaper than S3 Glacier - Flexible but has more restrictions that you need to tolerate.  
+        - Similar with Glacier - Flexible (objects cannot be made publicly accessible, a pointer will be given to retrieve the object, data is stored in S3 Standard-IA temporarily) but has more expensive retrievals
+            - Standard: data available in 12 hrs
+            - Bulk: up to 48 hrs
+        - first byte latency = hours or days
+    - Data is in a "frozen" state instead of chilled.
+    - 40KB minimum billable size.
+    - 180 day minimum billable duration
+    - Similar with Glacier - Flexible
+7. S3 Intelligent-Tiering
+    - Different compared to everything else.
+    - Designed for long-lived data where the usage is changing or unknown.
+    - It contains five different storage tiers.
+        - Frequent Access : S3 Standard
+        - Infrequent Access : S3 Standard-IA
+        - Archive Instant Access : S3 Glacier - Instant
+        - Archive access : S3 Glacier - Flexible
+        - Deep Archive : S3 Glacier deep archive
+    - Don't have to worry about changing tiers. Intelligent-Tiering does this for you automatically based on object usage.
+        - if frequently accessed, object stays in frequent Access.
+        - if not accessed within 30 days, automatically moved to Infrequent access.
+        - If longer than that, you can set up archive configuration to track longer days (minimum of 90 days) before moving to Archive Instant access.
+        - Archive access (90 -> 270 days) and Deep Archive(180 -> 730 days) are optional.
+    - Tier pricings are the same as its equivalent classes, but there is management cost.
+        - has monitoring and automation cost per 1000 objects.
+
+<br>
+
+## S3 Lifecycle Configuration
+- A set of rules which you apply to a bucket.
+    - consists of actions which apply based on criteria.
+    - can apply to a bucket or group of objects defined by prefix or tags.
+- Types of actions:
+    1. Transition action 
+        - change the storage class of whichever object or objects are affected.
+    2. Expiration action
+        - can delete whatever object or objects or object versions are affected.
+    - These 2 actions can work with versions but needs careful planning because it can get complex.
+    - These rules are not based on access, so you can't move objects between classes based on how frequently they're accessed (this is handled by Intelligent-Tiering)
+    - You can combine these 2 to manage an object's lifecycle.
+
+### Transitions
+- Transitions can only happen downwards, not upwards.
+- There are also some restrictions.
+    - Be careful when transitioning smaller objects (minimum size). For the following, smaller objects can cost more:
+        - S3 Standard-IA
+        - S3 Intelligent-Tiering
+        - S3 One Zone-IA
+    - Needs minimum of 30 days in S3 Standard before you can transition to Standard-IA. You can do it right away (via manual/CLI), but this rule applies when creating Lifecycle configuration.
+    - S3 One Zone-IA can't transition to S3 Glacier - Instant
+    - A single Lifecycle rule cannot transition to Standard-IA or One Zone-IA, and then to glacier classes right away. There has to be a 30 day period before the transition. It's only applicable for single rule usage so it's fine not to follow if you're planning to use multiple rules.
+
+![Alt text](pic/S3LifeCycle.png)
