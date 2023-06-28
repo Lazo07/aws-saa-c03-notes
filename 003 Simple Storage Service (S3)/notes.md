@@ -477,3 +477,7 @@
     - or doesn't have access now but used to have it before.
 - It's not a good idea to generate the URL using an IAM Role. Always use long term identities (generally an IAM user).
     - Presigned URLS can have a much longer validity period than IAM Role's temporary credentials. If the temporary credential expires, you will no longer have access via URL.
+
+To generate the URL via CloudShell or AWS CLI:
+
+        aws S3 presign <S3 URI> --expires-in <SECONDS>
