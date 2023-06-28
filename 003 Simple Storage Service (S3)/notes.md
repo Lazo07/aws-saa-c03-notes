@@ -570,3 +570,18 @@ To generate the URL via CloudShell or AWS CLI:
     - `s3:PutObjectLegalHold` permission is required to be able to add or remove Legal Hold.
     - It prevents accidental deletion of critical object versions.
 
+<br>
+
+## S3 Access Points
+- improves manageability of S3 buckets.
+- Simplify managing access to S3 buckets/Objects.
+- Rather than having 1 bucket with 1 complicated bucket policy, you can instead create many access points
+    - each with different policies.
+    - each with different network access controls.
+    - Access Point policies control permissions.
+- Can be created via console UI or CLI:
+
+         aws s3control create-access-point --name secretcats --account-id 123456789012 --bucket catpics
+- You can set your bucket policy to cover a wide open access, then Access point policy will have the more granular configuration.
+    - It's important to remember that anything allowed by Access Point policy will also need to be allowed by the bucket policy.
+- Access Points can be configured to only allow a VPC origin, which requires a VPC endpoint.
