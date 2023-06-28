@@ -582,6 +582,7 @@ To generate the URL via CloudShell or AWS CLI:
 - Can be created via console UI or CLI:
 
          aws s3control create-access-point --name secretcats --account-id 123456789012 --bucket catpics
+         
 - You can set your bucket policy to cover a wide open access, then Access point policy will have the more granular configuration.
     - It's important to remember that anything allowed by Access Point policy will also need to be allowed by the bucket policy.
 - Access Points can be configured to only allow a VPC origin, which requires a VPC endpoint.
