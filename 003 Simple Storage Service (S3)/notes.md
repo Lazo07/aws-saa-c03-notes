@@ -445,7 +445,7 @@
 - It is capable of handling unencrypted objects, as well as encrypted using SSE-S3, SSE-KMS(with extra config), SSE-C (latest addition, it used to not be compatible with replication).
 - Source bucket owner needs permission to objects. Otherwise, it will not be replicated even if the account is the bucket owner.
 - It will NOT replicate system events (ie. changes made in the bucket by Life Cycle management), glacier or glacier deep archive.
-- Deletes are NOT replicated by default, but can be added using DeleteMarkerReplcation
+- Deletes are NOT replicated by default, but can be added using DeleteMarkerReplication
 
 ### Why use replication?
 - for SRR
@@ -455,3 +455,25 @@
 - for CRR
     - Global resiliency
     - Latency reduction
+
+<br>
+
+## S3 PreSigned URLs
+- Presigned URLs are a way that you can give another person or application access to an object inside an S3 bucket using your credentials in a safe and secure way.
+- Often used when you 
+    - offload media into S3
+    - use serverless architecture where access to a private S3 bucket needs to be controlled 
+    - you don't want to run thick application servers to broker that access.
+- Can be used for Upload (PUT) and Download (GET) to private S3 buckets with the access rights of the identity.
+- contains encoded authentication of IAM user/role.
+- they are time limited.
+
+### Special Notes
+- You can create a URL for an object you don't have access to.
+    - but since it will use your identity to generate the URL, it will also have no access to the object.
+- When using the URL, the permissions match the identity which generated it.
+- When access is denied,
+    - It could mean the generating ID never had access, 
+    - or doesn't have access now but used to have it before.
+- It's not a good idea to generate the URL using an IAM Role. Always use long term identities (generally an IAM user).
+    - Presigned URLS can have a much longer validity period than IAM Role's temporary credentials. If the temporary credential expires, you will no longer have access via URL.
