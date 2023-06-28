@@ -399,3 +399,59 @@
     - A single Lifecycle rule cannot transition to Standard-IA or One Zone-IA, and then to glacier classes right away. There has to be a 30 day period before the transition. It's only applicable for single rule usage so it's fine not to follow if you're planning to use multiple rules.
 
 ![Alt text](pic/S3LifeCycle.png)
+
+<br>
+
+## S3 Replication
+- A feature which allows you to configure the replication of objects between a source and destination S3 bucket.
+
+### 2 Types of replication supported by S3
+1. Cross-region replication (CRR)
+    - allows replication of objects from a source object to a destination bucket in different AWS regions.
+    - There's a requirement to add a bucket policy on the destination account.
+2. Same-region replication (SRR)
+    - both source and destination buckets are in the same AWS region.
+    - No need for bucket policy because it's in the same account, so that means the account is automatically trusted by both buckets.
+
+### Replication steps
+- A Replication configuration is applied to the source bucket.
+    - It configures S3 to replicate from this source bucket to a destination bucket.
+    - It specifies the folowing:
+        - The destination bucket to use as part of that replication.
+        - IAM role to use. 
+            - The role is configured to allow the S3 service to assume it, so that's defined in its Trust Policy.
+            - The role's permission policy gives it the permission to read objects on the source bucket, and permission to replicate the object to the destination bucket.
+- The replication is encrypted (SSL).
+
+### S3 Replication Options
+- The default is to replicate an entire source bucket to a destination bucket.
+- You can create a rule that adds a filter by prefix or tags or a combination of both to get a subset of objects.
+- You can select which storage class the objects in the destination bucket will use.
+    - The default is to use the same class for the destination  as the source, but you can override/pick a cheaper class if this is going to be a secondary copy of data. (ie. Standard-IA or One Zone-IA, tolerating lower level of resiliency)
+- You can define the ownership of the objects in the destination bucket.
+    - The default is they will be owned by the same account as the source bucket, but you can override it to be owned by the destination account (specially for CRR).
+- Replication Time Control (RTC)
+    - Adds a guaranteed 15 minute replication SLA.
+    - only used when you have a really strict set of requirements from the business to make sure that the destination and source buckets are in sync as closely as possible.
+
+### S3 Replication Considerations
+- By default, replication is NOT retroactive.
+    - You enable replication on a pair of buckets, a source and a destination, and only from that point onward are objects replicated from source to destination.
+    - If the source bucket already has objects, then you enabled replication, those objects will not be replicated.
+- You can use S3 Batch replication to replicate existing objects but this is something that you need to specifically configure.
+    - By default, It's one way replication process only. (from source to destination) so if you place an object in the destination bucket, this will not be replicated back to the source bucket.
+    - You can configure it to do multi-directional.
+- To enable replication, you need the source and destination buckets allow versioning. This is a requirement, so a bucket cannot be enabled for replication without versioning.
+- It is capable of handling unencrypted objects, as well as encrypted using SSE-S3, SSE-KMS(with extra config), SSE-C (latest addition, it used to not be compatible with replication).
+- Source bucket owner needs permission to objects. Otherwise, it will not be replicated even if the account is the bucket owner.
+- It will NOT replicate system events (ie. changes made in the bucket by Life Cycle management), glacier or glacier deep archive.
+- Deletes are NOT replicated by default, but can be added using DeleteMarkerReplcation
+
+### Why use replication?
+- for SRR
+    - Log aggregation in a single S3 bucket
+    - PROD and TEST data Synchronization
+    - Strict data sovereignty
+- for CRR
+    - Global resiliency
+    - Latency reduction
