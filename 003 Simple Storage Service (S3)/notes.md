@@ -7,6 +7,7 @@
 - initial access is granted to Account root user (account which created it) by default.
 - Granting access priviledge for other accounts will need to be done explicitly.
     - By using S3 bucket policies.
+- Can store huge objects (up to 5TB) but can store unlimited number of objects.
 
 ### Bucket Policies
 - A type of <u>AWS Resource Policy</u>.
@@ -480,4 +481,13 @@
 
 To generate the URL via CloudShell or AWS CLI:
 
-        aws S3 presign <S3 URI> --expires-in <SECONDS>
+        aws s3 presign <S3 URI> --expires-in <SECONDS>
+
+<br>
+
+## S3 Select and Glacier Select
+- ways you can retrieve parts of an object instead of a whole object.
+- lets you use SQL-Like statements to pre-filter parts of object.
+- Needs to be configured explicitly to use.
+
+![Alt text](pic/S3andGlacierSelect.png)
